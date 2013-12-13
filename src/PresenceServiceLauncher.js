@@ -12,10 +12,10 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-function PushServiceLauncher() {
+function PresenceServiceLauncher() {
 };
 
-PushServiceLauncher.prototype = {
+PresenceServiceLauncher.prototype = {
   classID: Components.ID("{4b8caa3b-3c58-4f3c-a7f5-7bd9cb24c11d}"),
 
   contractID: "@mozilla.org/push/ServiceLauncher;1",
@@ -33,11 +33,11 @@ PushServiceLauncher.prototype = {
         if (!Services.prefs.getBoolPref("services.push.enabled")) {
           return;
         }
-        Cu.import("resource://gre/modules/PushService.jsm");
-        PushService.init();
+        Cu.import("resource://gre/modules/PresenceService.jsm");
+        PresenceService.init();
         break;
     }
   }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([PushServiceLauncher]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([PresenceServiceLauncher]);

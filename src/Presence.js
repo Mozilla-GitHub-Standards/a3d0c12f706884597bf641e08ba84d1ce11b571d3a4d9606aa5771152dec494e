@@ -9,7 +9,7 @@ let gDebuggingEnabled = false;
 
 function debug(s) {
   if (gDebuggingEnabled)
-    dump("-*- Push.js: " + s + "\n");
+    dump("-*- Presence.js: " + s + "\n");
 }
 
 const Cc = Components.classes;
@@ -24,18 +24,18 @@ Cu.import("resource://gre/modules/AppsUtils.jsm");
 const PUSH_CID = Components.ID("{cde1d019-fad8-4044-b141-65fb4fb7a245}");
 
 /**
- * The Push component runs in the child process and exposes the SimplePush API
- * to the web application. The PushService running in the parent process is the
+ * The Presence component runs in the child process and exposes the SimplePresence API
+ * to the web application. The PresenceService running in the parent process is the
  * one actually performing all operations.
  */
-function Push() {
-  debug("Push Constructor");
+function Presence() {
+  debug("Presence Constructor");
 }
 
-Push.prototype = {
+Presence.prototype = {
   __proto__: DOMRequestIpcHelper.prototype,
 
-  contractID: "@mozilla.org/push/PushManager;1",
+  contractID: "@mozilla.org/push/PresenceManager;1",
 
   classID : PUSH_CID,
 
@@ -45,7 +45,7 @@ Push.prototype = {
 
   init: function(aWindow) {
     // Set debug first so that all debugging actually works.
-    // NOTE: We don't add an observer here like in PushService. Flipping the
+    // NOTE: We don't add an observer here like in PresenceService. Flipping the
     // pref will require a reload of the app/page, which seems acceptable.
     gDebuggingEnabled = Services.prefs.getBoolPref("services.push.debug");
     debug("init()");
@@ -58,12 +58,12 @@ Push.prototype = {
     this._pageURL = principal.URI;
 
     this.initDOMRequestHelper(aWindow, [
-      "PushService:Register:OK",
-      "PushService:Register:KO",
-      "PushService:Unregister:OK",
-      "PushService:Unregister:KO",
-      "PushService:Registrations:OK",
-      "PushService:Registrations:KO"
+      "PresenceService:Register:OK",
+      "PresenceService:Register:KO",
+      "PresenceService:Unregister:OK",
+      "PresenceService:Unregister:KO",
+      "PresenceService:Registrations:OK",
+      "PresenceService:Registrations:KO"
     ]);
 
     this._cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"]
@@ -80,22 +80,22 @@ Push.prototype = {
     }
 
     switch (aMessage.name) {
-      case "PushService:Register:OK":
+      case "PresenceService:Register:OK":
         Services.DOMRequest.fireSuccess(request, json.pushEndpoint);
         break;
-      case "PushService:Register:KO":
+      case "PresenceService:Register:KO":
         Services.DOMRequest.fireError(request, json.error);
         break;
-      case "PushService:Unregister:OK":
+      case "PresenceService:Unregister:OK":
         Services.DOMRequest.fireSuccess(request, json.pushEndpoint);
         break;
-      case "PushService:Unregister:KO":
+      case "PresenceService:Unregister:KO":
         Services.DOMRequest.fireError(request, json.error);
         break;
-      case "PushService:Registrations:OK":
+      case "PresenceService:Registrations:OK":
         Services.DOMRequest.fireSuccess(request, json.registrations);
         break;
-      case "PushService:Registrations:KO":
+      case "PresenceService:Registrations:KO":
         Services.DOMRequest.fireError(request, json.error);
         break;
       default:
@@ -113,7 +113,7 @@ Push.prototype = {
       return req;
     }
 
-    this._cpmm.sendAsyncMessage("Push:Register", {
+    this._cpmm.sendAsyncMessage("Presence:Register", {
                                   pageURL: this._pageURL.spec,
                                   manifestURL: this._manifestURL,
                                   requestID: this.getRequestId(req)
@@ -121,14 +121,14 @@ Push.prototype = {
     return req;
   },
 
-  unregister: function(aPushEndpoint) {
-    debug("unregister(" + aPushEndpoint + ")");
+  unregister: function(aPresenceEndpoint) {
+    debug("unregister(" + aPresenceEndpoint + ")");
     let req = this.createRequest();
-    this._cpmm.sendAsyncMessage("Push:Unregister", {
+    this._cpmm.sendAsyncMessage("Presence:Unregister", {
                                   pageURL: this._pageURL.spec,
                                   manifestURL: this._manifestURL,
                                   requestID: this.getRequestId(req),
-                                  pushEndpoint: aPushEndpoint
+                                  pushEndpoint: aPresenceEndpoint
                                 });
     return req;
   },
@@ -136,7 +136,7 @@ Push.prototype = {
   registrations: function() {
     debug("registrations()");
     let req = this.createRequest();
-    this._cpmm.sendAsyncMessage("Push:Registrations", {
+    this._cpmm.sendAsyncMessage("Presence:Registrations", {
                                   manifestURL: this._manifestURL,
                                   requestID: this.getRequestId(req)
                                 });
@@ -144,4 +144,4 @@ Push.prototype = {
   }
 }
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([Push]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([Presence]);

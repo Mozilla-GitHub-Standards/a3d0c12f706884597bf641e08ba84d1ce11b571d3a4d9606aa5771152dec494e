@@ -9,7 +9,7 @@ let gDebuggingEnabled = false;
 
 function debug(s) {
   if (gDebuggingEnabled)
-    dump("-*- PushService.jsm: " + s + "\n");
+    dump("-*- PresenceService.jsm: " + s + "\n");
 }
 
 const Cc = Components.classes;
@@ -28,7 +28,7 @@ Cu.importGlobalProperties(["indexedDB"]);
 XPCOMUtils.defineLazyModuleGetter(this, "AlarmService",
                                   "resource://gre/modules/AlarmService.jsm");
 
-this.EXPORTED_SYMBOLS = ["PushService"];
+this.EXPORTED_SYMBOLS = ["PresenceService"];
 
 const prefs = new Preferences("services.push.");
 // Set debug first so that all debugging actually works.
@@ -42,23 +42,23 @@ const kUDP_WAKEUP_WS_STATUS_CODE = 4774;  // WebSocket Close status code sent
                                           // by server to signal that it can
                                           // wake client up using UDP.
 
-const kCHILD_PROCESS_MESSAGES = ["Push:Register", "Push:Unregister",
-                                 "Push:Registrations"];
+const kCHILD_PROCESS_MESSAGES = ["Presence:Register", "Presence:Unregister",
+                                 "Presence:Registrations"];
 
 // This is a singleton
-this.PushDB = function PushDB() {
-  debug("PushDB()");
+this.PresenceDB = function PresenceDB() {
+  debug("PresenceDB()");
 
   // set the indexeddb database
   this.initDBHelper(kPUSHDB_DB_NAME, kPUSHDB_DB_VERSION,
                     [kPUSHDB_STORE_NAME]);
 };
 
-this.PushDB.prototype = {
+this.PresenceDB.prototype = {
   __proto__: IndexedDBHelper.prototype,
 
   upgradeSchema: function(aTransaction, aDb, aOldVersion, aNewVersion) {
-    debug("PushDB.upgradeSchema()")
+    debug("PresenceDB.upgradeSchema()")
 
     let objectStore = aDb.createObjectStore(kPUSHDB_STORE_NAME,
                                             { keyPath: "channelID" });
@@ -121,8 +121,8 @@ this.PushDB.prototype = {
     );
   },
 
-  getByPushEndpoint: function(aPushEndpoint, aSuccessCb, aErrorCb) {
-    debug("getByPushEndpoint()");
+  getByPresenceEndpoint: function(aPresenceEndpoint, aSuccessCb, aErrorCb) {
+    debug("getByPresenceEndpoint()");
 
     this.newTxn(
       "readonly",
@@ -131,7 +131,7 @@ this.PushDB.prototype = {
         aTxn.result = undefined;
 
         let index = aStore.index("pushEndpoint");
-        index.get(aPushEndpoint).onsuccess = function setTxnResult(aEvent) {
+        index.get(aPresenceEndpoint).onsuccess = function setTxnResult(aEvent) {
           aTxn.result = aEvent.target.result;
           debug("Fetch successful " + aEvent.target.result);
         }
@@ -164,7 +164,7 @@ this.PushDB.prototype = {
     debug("getAllByManifestURL()");
     if (!aManifestURL) {
       if (typeof aErrorCb == "function") {
-        aErrorCb("PushDB.getAllByManifestURL: Got undefined aManifestURL");
+        aErrorCb("PresenceDB.getAllByManifestURL: Got undefined aManifestURL");
       }
       return;
     }
@@ -222,18 +222,18 @@ this.PushDB.prototype = {
 };
 
 /**
- * A proxy between the PushService and the WebSocket. The listener is used so
- * that the PushService can silence messages from the WebSocket by setting
- * PushWebSocketListener._pushService to null. This is required because
+ * A proxy between the PresenceService and the WebSocket. The listener is used so
+ * that the PresenceService can silence messages from the WebSocket by setting
+ * PresenceWebSocketListener._pushService to null. This is required because
  * a WebSocket can continue to send messages or errors after it has been
- * closed but the PushService may not be interested in these. It's easier to
+ * closed but the PresenceService may not be interested in these. It's easier to
  * stop listening than to have checks at specific points.
  */
-this.PushWebSocketListener = function(pushService) {
+this.PresenceWebSocketListener = function(pushService) {
   this._pushService = pushService;
 }
 
-this.PushWebSocketListener.prototype = {
+this.PresenceWebSocketListener.prototype = {
   onStart: function(context) {
     if (!this._pushService)
         return;
@@ -279,11 +279,11 @@ const STATE_WAITING_FOR_HELLO = 2;
 const STATE_READY = 3;
 
 /**
- * The implementation of the SimplePush system. This runs in the B2G parent
+ * The implementation of the SimplePresence system. This runs in the B2G parent
  * process and is started on boot. It uses WebSockets to communicate with the
- * server and PushDB (IndexedDB) for persistence.
+ * server and PresenceDB (IndexedDB) for persistence.
  */
-this.PushService = {
+this.PresenceService = {
   observe: function observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       /*
@@ -435,7 +435,7 @@ this.PushService = {
   _willBeWokenUpByUDP: false,
 
   /**
-   * Sends a message to the Push Server through an open websocket.
+   * Sends a message to the Presence Server through an open websocket.
    * typeof(msg) shall be an object
    */
   _wsSendMessage: function(msg) {
@@ -453,7 +453,7 @@ this.PushService = {
     if (!prefs.get("enabled"))
         return null;
 
-    this._db = new PushDB();
+    this._db = new PresenceDB();
 
     let ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                  .getService(Ci.nsIMessageBroadcaster);
@@ -475,7 +475,7 @@ this.PushService = {
     // event.
     //
     // The "active network" is based on priority - i.e. Wi-Fi has higher
-    // priority than data. The PushService should just use the preferred
+    // priority than data. The PresenceService should just use the preferred
     // network, and not care about all interface changes.
     // network-active-changed is not fired when the network goes offline, but
     // socket connections time out. The check for Services.io.offline in
@@ -494,7 +494,7 @@ this.PushService = {
     // This is only used for testing. Different tests require connecting to
     // slightly different URLs.
     prefs.observe("serverURL", this);
-    // Used to monitor if the user wishes to disable Push.
+    // Used to monitor if the user wishes to disable Presence.
     prefs.observe("connection.enabled", this);
     // Debugging
     prefs.observe("debug", this);
@@ -630,7 +630,7 @@ this.PushService = {
                    .createInstance(Ci.nsIWebSocketChannel);
     }
     else if (uri.scheme === "ws") {
-      debug("Push over an insecure connection (ws://) is not allowed!");
+      debug("Presence over an insecure connection (ws://) is not allowed!");
       return;
     }
     else {
@@ -640,7 +640,7 @@ this.PushService = {
 
 
     debug("serverURL: " + uri.spec);
-    this._wsListener = new PushWebSocketListener(this);
+    this._wsListener = new PresenceWebSocketListener(this);
     this._ws.protocol = "push-notification";
     this._ws.asyncOpen(uri, serverURL, this._wsListener, null);
     this._currentState = STATE_WAITING_FOR_WS_START;
@@ -704,7 +704,7 @@ this.PushService = {
    *
    * 1) Reconnect on ping timeout.
    *    If we haven't received any messages from the server by the time this
-   *    alarm fires, the connection is closed and PushService tries to
+   *    alarm fires, the connection is closed and PresenceService tries to
    *    reconnect, repurposing the alarm for (3).
    *
    * 2) Send a ping.
@@ -967,19 +967,19 @@ this.PushService = {
   _receivedUpdate: function(aChannelID, aLatestVersion) {
     debug("Updating: " + aChannelID + " -> " + aLatestVersion);
 
-    let compareRecordVersionAndNotify = function(aPushRecord) {
+    let compareRecordVersionAndNotify = function(aPresenceRecord) {
       debug("compareRecordVersionAndNotify()");
-      if (!aPushRecord) {
+      if (!aPresenceRecord) {
         debug("No record for channel ID " + aChannelID);
         return;
       }
 
-      if (aPushRecord.version == null ||
-          aPushRecord.version < aLatestVersion) {
+      if (aPresenceRecord.version == null ||
+          aPresenceRecord.version < aLatestVersion) {
         debug("Version changed, notifying app and updating DB");
-        aPushRecord.version = aLatestVersion;
-        this._notifyApp(aPushRecord);
-        this._updatePushRecord(aPushRecord)
+        aPresenceRecord.version = aLatestVersion;
+        this._notifyApp(aPresenceRecord);
+        this._updatePresenceRecord(aPresenceRecord)
           .then(
             null,
             function(e) {
@@ -1039,29 +1039,29 @@ this.PushService = {
     return deferred.promise;
   },
 
-  _notifyApp: function(aPushRecord) {
-    if (!aPushRecord || !aPushRecord.pageURL || !aPushRecord.manifestURL) {
+  _notifyApp: function(aPresenceRecord) {
+    if (!aPresenceRecord || !aPresenceRecord.pageURL || !aPresenceRecord.manifestURL) {
       debug("notifyApp() something is undefined.  Dropping notification");
       return;
     }
 
-    debug("notifyApp() " + aPushRecord.pageURL +
-          "  " + aPushRecord.manifestURL);
-    let pageURI = Services.io.newURI(aPushRecord.pageURL, null, null);
-    let manifestURI = Services.io.newURI(aPushRecord.manifestURL, null, null);
+    debug("notifyApp() " + aPresenceRecord.pageURL +
+          "  " + aPresenceRecord.manifestURL);
+    let pageURI = Services.io.newURI(aPresenceRecord.pageURL, null, null);
+    let manifestURI = Services.io.newURI(aPresenceRecord.manifestURL, null, null);
     let message = {
-      pushEndpoint: aPushRecord.pushEndpoint,
-      version: aPushRecord.version
+      pushEndpoint: aPresenceRecord.pushEndpoint,
+      version: aPresenceRecord.version
     };
     let messenger = Cc["@mozilla.org/system-message-internal;1"]
                       .getService(Ci.nsISystemMessagesInternal);
     messenger.sendMessage('push', message, pageURI, manifestURI);
   },
 
-  _updatePushRecord: function(aPushRecord) {
-    debug("updatePushRecord()");
+  _updatePresenceRecord: function(aPresenceRecord) {
+    debug("updatePresenceRecord()");
     let deferred = Promise.defer();
-    this._db.put(aPushRecord, deferred.resolve, deferred.reject);
+    this._db.put(aPresenceRecord, deferred.resolve, deferred.reject);
     return deferred.promise;
   },
 
@@ -1081,7 +1081,7 @@ this.PushService = {
 
     let mm = aMessage.target.QueryInterface(Ci.nsIMessageSender);
     let json = aMessage.data;
-    this[aMessage.name.slice("Push:".length).toLowerCase()](json, mm);
+    this[aMessage.name.slice("Presence:".length).toLowerCase()](json, mm);
   },
 
   /**
@@ -1103,10 +1103,10 @@ this.PushService = {
       )
       .then(
         function(message) {
-          aMessageManager.sendAsyncMessage("PushService:Register:OK", message);
+          aMessageManager.sendAsyncMessage("PresenceService:Register:OK", message);
         },
         function(message) {
-          aMessageManager.sendAsyncMessage("PushService:Register:KO", message);
+          aMessageManager.sendAsyncMessage("PresenceService:Register:KO", message);
       });
   },
 
@@ -1148,7 +1148,7 @@ this.PushService = {
       version: null
     };
 
-    this._updatePushRecord(record)
+    this._updatePresenceRecord(record)
       .then(
         function() {
           message["pushEndpoint"] = data.pushEndpoint;
@@ -1187,7 +1187,7 @@ this.PushService = {
    * so that the AppServer does not keep pinging a channel the UserAgent isn't
    * watching The important part of the transaction in this case is left to the
    * app, to tell its server of the unregistration.  Even if the request to the
-   * PushServer were to fail, it would not affect correctness of the protocol,
+   * PresenceServer were to fail, it would not affect correctness of the protocol,
    * and the server GC would just clean up the channelID eventually.  Since the
    * appserver doesn't ping it, no data is lost.
    *
@@ -1207,10 +1207,10 @@ this.PushService = {
     let fail = function(error) {
       debug("unregister() fail() error " + error);
       let message = {requestID: aPageRecord.requestID, error: error};
-      aMessageManager.sendAsyncMessage("PushService:Unregister:KO", message);
+      aMessageManager.sendAsyncMessage("PresenceService:Unregister:KO", message);
     }
 
-    this._db.getByPushEndpoint(aPageRecord.pushEndpoint, function(record) {
+    this._db.getByPresenceEndpoint(aPageRecord.pushEndpoint, function(record) {
       // If the endpoint didn't exist, let's just fail.
       if (record === undefined) {
         fail("NotFoundError");
@@ -1219,7 +1219,7 @@ this.PushService = {
 
       // Non-owner tried to unregister, say success, but don't do anything.
       if (record.manifestURL !== aPageRecord.manifestURL) {
-        aMessageManager.sendAsyncMessage("PushService:Unregister:OK", {
+        aMessageManager.sendAsyncMessage("PresenceService:Unregister:OK", {
           requestID: aPageRecord.requestID,
           pushEndpoint: aPageRecord.pushEndpoint
         });
@@ -1230,7 +1230,7 @@ this.PushService = {
         // Let's be nice to the server and try to inform it, but we don't care
         // about the reply.
         this._send("unregister", {channelID: record.channelID});
-        aMessageManager.sendAsyncMessage("PushService:Unregister:OK", {
+        aMessageManager.sendAsyncMessage("PresenceService:Unregister:OK", {
           requestID: aPageRecord.requestID,
           pushEndpoint: aPageRecord.pushEndpoint
         });
@@ -1265,20 +1265,20 @@ this.PushService = {
           version: pushRecord.version
       });
     });
-    aMessageManager.sendAsyncMessage("PushService:Registrations:OK", {
+    aMessageManager.sendAsyncMessage("PresenceService:Registrations:OK", {
       requestID: aPageRecord.requestID,
       registrations: registrations
     });
   },
 
   _onRegistrationsError: function(aPageRecord, aMessageManager) {
-    aMessageManager.sendAsyncMessage("PushService:Registrations:KO", {
+    aMessageManager.sendAsyncMessage("PresenceService:Registrations:KO", {
       requestID: aPageRecord.requestID,
       error: "Database error"
     });
   },
 
-  // begin Push protocol handshake
+  // begin Presence protocol handshake
   _wsOnStart: function(context) {
     debug("wsOnStart()");
     if (this._currentState != STATE_WAITING_FOR_WS_START) {
@@ -1481,7 +1481,7 @@ this.PushService = {
       let nm = Cc["@mozilla.org/network/manager;1"].getService(Ci.nsINetworkManager);
       if (nm.active && nm.active.type == Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE) {
         let icc = Cc["@mozilla.org/ril/content-helper;1"].getService(Ci.nsIIccProvider);
-        // TODO: Bug 927721 - PushService for multi-sim
+        // TODO: Bug 927721 - PresenceService for multi-sim
         // In Multi-sim, there is more than one client in iccProvider. Each
         // client represents a icc service. To maintain backward compatibility
         // with single sim, we always use client 0 for now. Adding support
