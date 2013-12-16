@@ -31,6 +31,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "AlarmService",
 this.EXPORTED_SYMBOLS = ["PresenceService"];
 
 const prefs = new Preferences("services.push.");
+
+// hardcoded values for now here
+prefs.set("serverURL", "ws://presence.ziade.org")
+
+
 // Set debug first so that all debugging actually works.
 gDebuggingEnabled = prefs.get("debug");
 
