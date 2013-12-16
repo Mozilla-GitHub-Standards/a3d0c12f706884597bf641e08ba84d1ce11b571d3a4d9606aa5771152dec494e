@@ -32,8 +32,10 @@ this.EXPORTED_SYMBOLS = ["PresenceService"];
 
 const prefs = new Preferences("services.push.");
 
-// hardcoded values for now here
-prefs.set("serverURL", "ws://presence.ziade.org")
+// hardcoded values for now here XXX TZ
+prefs.set("serverURL", "ws://presence.ziade.org/presence");
+prefs.set("connection.enabled", true);
+prefs.set("debug", true);
 
 
 // Set debug first so that all debugging actually works.
