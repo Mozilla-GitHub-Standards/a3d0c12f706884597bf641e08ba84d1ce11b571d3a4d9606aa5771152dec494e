@@ -12,6 +12,14 @@ e.g.::
     $ cd B2G/gecko/dom
     $ ln -s /path/to/repos/gecko-dom-presence presence
 
+Then, add those lines into gecko/b2g/installer/package-manifest.in ::
+
+    @BINPATH@/components/Presence.js
+    @BINPATH@/components/Presence.manifest
+    @BINPATH@/components/PresenceServiceLauncher.js
+
+Under @BINPATH@/components/PushServiceLauncher.js
+
 Rebuild & Flash::
 
     $ cd B2G
