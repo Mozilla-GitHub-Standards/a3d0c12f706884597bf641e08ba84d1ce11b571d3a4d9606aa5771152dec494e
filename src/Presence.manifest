@@ -1,8 +1,8 @@
 # DOM API
-component {cde1d019-fad8-4044-b141-65fb4fb7a245} Presence.js
-contract @mozilla.org/push/PresenceManager;1 {cde1d019-fad8-4044-b141-65fb4fb7a245}
+component {cdf1d019-fad8-4044-b141-65fb4fb7a245} Presence.js
+contract @mozilla.org/presence/PresenceManager;1 {cdf1d019-fad8-4044-b141-65fb4fb7a245}
 
 # Component to initialize PresenceService on startup.
-component {4b8caa3b-3c58-4f3c-a7f5-7bd9cb24c11d} PresenceServiceLauncher.js
-contract @mozilla.org/push/ServiceLauncher;1 {4b8caa3b-3c58-4f3c-a7f5-7bd9cb24c11d}
-category app-startup PresenceServiceLauncher @mozilla.org/push/ServiceLauncher;1
+component {4b8caa3b-3c58-4f3c-a7g5-7bd9cb24c11d} PresenceServiceLauncher.js
+contract @mozilla.org/presence/ServiceLauncher;1 {4b8caa3b-3c58-4f3c-a7g5-7bd9cb24c11d}
+category app-startup PresenceServiceLauncher @mozilla.org/presence/ServiceLauncher;1

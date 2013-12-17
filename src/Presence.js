@@ -21,7 +21,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/DOMRequestHelper.jsm");
 Cu.import("resource://gre/modules/AppsUtils.jsm");
 
-const PUSH_CID = Components.ID("{cde1d019-fad8-4044-b141-65fb4fb7a245}");
+const PUSH_CID = Components.ID("{cdf1d019-fad8-4044-b141-65fb4fb7a245}");
 
 /**
  * The Presence component runs in the child process and exposes the SimplePresence API
@@ -35,7 +35,7 @@ function Presence() {
 Presence.prototype = {
   __proto__: DOMRequestIpcHelper.prototype,
 
-  contractID: "@mozilla.org/push/PresenceManager;1",
+  contractID: "@mozilla.org/presence/PresenceManager;1",
 
   classID : PUSH_CID,
 

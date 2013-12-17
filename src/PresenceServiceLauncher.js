@@ -26,7 +26,7 @@ function PresenceServiceLauncher() {
 };
 
 PresenceServiceLauncher.prototype = {
-  classID: Components.ID("{4b8caa3b-3c58-4f3c-a7f5-7bd9cb24c11d}"),
+  classID: Components.ID("{4b8caa3b-3c58-4f3c-a7g5-7bd9cb24c11d}"),
 
   contractID: "@mozilla.org/presence/ServiceLauncher;1",
 

@@ -1,6 +1,9 @@
 Gecko Presence Service
 ======================
 
+Building
+--------
+
 To add this service in your B2G build, insert this directory in <B2G>/gecko/dom as
 "presence".
 
@@ -9,7 +12,17 @@ e.g.::
     $ cd B2G/gecko/dom
     $ ln -s /path/to/repos/gecko-dom-presence presence
 
-Add a **custom-prefs.js** file inside your build directory with this content::
+Rebuild & Flash::
+
+    $ cd B2G
+    $ ./build.sh
+    $ ./flash.sh
+
+
+Activation
+----------
+
+Add a **custom-prefs.js** file inside your gaia/build directory with this content::
 
     user_pref("services.presence.serverURL", "ws://presence.ziade.org/presence");
     user_pref("services.presence.enabled", true);
@@ -18,11 +31,8 @@ Add a **custom-prefs.js** file inside your build directory with this content::
 
 This will activate the service.
 
-Prune your profile::
+Reset Gaia::
 
-    rm -rf profile
+    $ cd gaia
+    $ make reset-gaia
 
-Rebuild & Flash::
-
-    $ ./build.sh
-    & ./flash.sh
