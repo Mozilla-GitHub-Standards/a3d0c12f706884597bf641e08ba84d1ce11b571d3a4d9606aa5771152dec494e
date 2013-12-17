@@ -4,7 +4,7 @@
 
 "use strict";
 
-// Don't modify this, instead set services.push.debug.
+// Don't modify this, instead set services.presence.debug.
 let gDebuggingEnabled = false;
 
 function debug(s) {
@@ -30,20 +30,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "AlarmService",
 
 this.EXPORTED_SYMBOLS = ["PresenceService"];
 
-const prefs = new Preferences("services.push.");
-
-// hardcoded values for now here XXX TZ
-prefs.set("serverURL", "ws://presence.ziade.org/presence");
-prefs.set("connection.enabled", true);
-prefs.set("debug", true);
-
+const prefs = new Preferences("services.presence.");
 
 // Set debug first so that all debugging actually works.
 gDebuggingEnabled = prefs.get("debug");
 
-const kPUSHDB_DB_NAME = "push";
+const kPUSHDB_DB_NAME = "presence";
 const kPUSHDB_DB_VERSION = 1; // Change this if the IndexedDB format changes
-const kPUSHDB_STORE_NAME = "push";
+const kPUSHDB_STORE_NAME = "presence";
 
 const kUDP_WAKEUP_WS_STATUS_CODE = 4774;  // WebSocket Close status code sent
                                           // by server to signal that it can
@@ -319,17 +313,17 @@ this.PresenceService = {
         }
         break;
       case "nsPref:changed":
-        if (aData == "services.push.serverURL") {
-          debug("services.push.serverURL changed! websocket. new value " +
+        if (aData == "services.presence.serverURL") {
+          debug("services.presence.serverURL changed! websocket. new value " +
                 prefs.get("serverURL"));
           this._shutdownWS();
-        } else if (aData == "services.push.connection.enabled") {
+        } else if (aData == "services.presence.connection.enabled") {
           if (prefs.get("connection.enabled")) {
             this._startListeningIfChannelsPresent();
           } else {
             this._shutdownWS();
           }
-        } else if (aData == "services.push.debug") {
+        } else if (aData == "services.presence.debug") {
           gDebuggingEnabled = prefs.get("debug");
         }
         break;
@@ -619,7 +613,7 @@ this.PresenceService = {
 
     let serverURL = prefs.get("serverURL");
     if (!serverURL) {
-      debug("No services.push.serverURL found!");
+      debug("No services.presence.serverURL found!");
       return;
     }
 
@@ -627,7 +621,7 @@ this.PresenceService = {
     try {
       uri = Services.io.newURI(serverURL, null, null);
     } catch(e) {
-      debug("Error creating valid URI from services.push.serverURL (" +
+      debug("Error creating valid URI from services.presence.serverURL (" +
             serverURL + ")");
       return;
     }

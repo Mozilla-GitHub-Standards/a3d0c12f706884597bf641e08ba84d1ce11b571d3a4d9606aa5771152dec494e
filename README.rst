@@ -9,5 +9,20 @@ e.g.::
     $ cd B2G/gecko/dom
     $ ln -s /path/to/repos/gecko-dom-presence presence
 
+Add a **custom-prefs.js** file inside your build directory with this content::
 
-And rebuild!
+    user_pref("services.presence.serverURL", "ws://presence.ziade.org/presence");
+    user_pref("services.presence.enabled", true);
+    user_pref("services.presence.connection.enabled", true);
+    user_pref("services.presence.debug", true);
+
+This will activate the service.
+
+Prune your profile::
+
+    rm -rf profile
+
+Rebuild & Flash::
+
+    $ ./build.sh
+    & ./flash.sh
